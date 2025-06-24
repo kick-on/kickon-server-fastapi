@@ -1,0 +1,51 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# 가상환경 (venv)
+venv/
+ENV/
+env/
+.venv/
+
+# FastAPI + Uvicorn 로그 파일 (optional)
+*.log
+
+# 환경 변수 파일
+.env
+.env.*
+
+# VSCode 설정
+.vscode/
+.history/
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# macOS 시스템 파일
+.DS_Store
+
+# 테스트 및 커버리지
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
+
+# Pydantic cache (Python ≥3.11)
+__pydantic_cache__/
+
+# Mypy / Pyright
+.mypy_cache/
+.pyright/
+
+# 기타 빌드/배포 관련
+dist/
+build/
+*.egg-info/
+*.egg
