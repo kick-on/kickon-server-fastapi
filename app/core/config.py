@@ -1,4 +1,5 @@
-from pydantic import BaseSettings
+# 환경변수 및 설정
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     project_name: str = "Kickon API"
