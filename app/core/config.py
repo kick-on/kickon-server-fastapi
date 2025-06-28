@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     project_name: str = "Kickon API"
     api_version: str = "v1"
 
+    openai_api_key: str 
+
     class Config:
         env_file = ".env"
 
