@@ -5,3 +5,7 @@ pydantic-settings
 openai
 youtube-comment-downloader 
 pymongo
+faiss-cpu
+faiss-gpu
+sentence-transformers
+langchain
