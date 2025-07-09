@@ -22,6 +22,8 @@ env/
 *.faiss
 *.pkl
 
+*.json
+
 # VSCode 설정
 .vscode/
 .history/
