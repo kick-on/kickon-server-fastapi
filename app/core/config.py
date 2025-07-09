@@ -5,7 +5,9 @@ class Settings(BaseSettings):
     project_name: str = "Kickon API"
     api_version: str = "v1"
 
-    openai_api_key: str 
+    openai_api_key: str
+    youtube_api_key: str
+    mongo_uri: str
 
     class Config:
         env_file = ".env"
