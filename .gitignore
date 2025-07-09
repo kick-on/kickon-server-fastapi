@@ -18,6 +18,10 @@ env/
 .env
 .env.*
 
+# FAISS 인덱스 파일
+*.faiss
+*.pkl
+
 # VSCode 설정
 .vscode/
 .history/
