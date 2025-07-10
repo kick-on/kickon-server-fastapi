@@ -33,28 +33,45 @@ def load_faiss_index():
         raise FileNotFoundError("FAISS 인덱스가 존재하지 않습니다.")
     return FAISS.load_local(FAISS_DIR, embedding_model)
 
-def save_faiss_index_from_mongo():
-    client = MongoClient(MONGO_URI)
-    collection = client[DB_NAME][COLLECTION_NAME]
+def save_faiss_index_from_mongo(top_comments):
+    """
+    대표 댓글(top_comments)을 받아 FAISS 인덱스를 생성하고 저장.
+    """
+
+    # client = MongoClient(MONGO_URI)
+    # collection = client[DB_NAME][COLLECTION_NAME]
 
     model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    all_docs = list(collection.find({}, {"video_id": 1, "comments.text_for_embedding": 1}))
+    #all_docs = list(collection.find({}, {"video_id": 1, "comments.text_for_embedding": 1}))
 
     embeddings = []
     metadata = []
 
-    for doc in tqdm(all_docs):
-        video_id = doc["video_id"]
-        for comment in doc.get("comments", []):
-            text = comment.get("text_for_embedding")
-            if text:
-                emb = model.encode(text)
-                embeddings.append(emb)
-                metadata.append({
-                    "video_id": video_id,
-                    "text": text,
-                    "created_at": datetime.utcnow().isoformat()
-                })
+    # for doc in tqdm(all_docs):
+    #     video_id = doc["video_id"]
+    #     for comment in doc.get("comments", []):
+    #         text = comment.get("text_for_embedding")
+    #         if text:
+    #             emb = model.encode(text)
+    #             embeddings.append(emb)
+    #             metadata.append({
+    #                 "video_id": video_id,
+    #                 "text": text,
+    #                 "created_at": datetime.utcnow().isoformat()
+    #             })
+
+    for comment in tqdm(top_comments):
+        text = comment.get("text_for_embedding")
+        if text:
+            emb = model.encode(text)
+            embeddings.append(emb)
+            metadata.append({
+                "video_id": comment["video_id"],
+                "text": text,
+                "query": comment.get("query", ""),
+                "like_count": comment.get("like_count", 0),
+                "created_at": comment.get("created_at", datetime.utcnow().isoformat())
+            })
 
     if embeddings:
         save_faiss_index(np.array(embeddings), metadata)
