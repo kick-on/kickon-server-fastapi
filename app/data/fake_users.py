@@ -1,7 +1,7 @@
 fake_users = [
     {
         "id": "user_01",
-        "nickname": "열정적인 리버풀팬",
+        "nickname": "33424",
         "team": "리버풀",
         "style": "fan",
         "tone": "흥분한 팬처럼 열정적으로 써줘."
