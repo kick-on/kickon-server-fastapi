@@ -1,6 +1,6 @@
 from youtube_comment_downloader import YoutubeCommentDownloader
 from pymongo import MongoClient
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import requests
 
 from app.core.config import settings
@@ -27,6 +27,9 @@ def search_videos(query, max_results=10):
     response.raise_for_status()
     items = response.json()["items"]
 
+    now = datetime.now(timezone.utc)
+    week_ago = now - timedelta(days=7)
+
     # 필터: 검색어의 양쪽 팀 이름이 모두 제목에 들어간 경우만 통과
     teams = [part.strip() for part in query.replace("하이라이트", "").split("vs") if part.strip()]
     
@@ -43,6 +46,7 @@ def search_videos(query, max_results=10):
             "published_at": item["snippet"]["publishedAt"]
         }
         for item in filtered_items
+        if datetime.strptime(item["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) >= week_ago
     ]
 
 # 댓글 크롤링 및 저장
@@ -76,8 +80,10 @@ def crawl_and_store_comments_by_query(query):
                 comment_obj = {
                     "author": comment.get("author", "unknown"),
                     "text": comment_text,
+                    "like_count": comment.get("votes", 0),
                     "published_at": datetime.utcnow(),
-                    "text_for_embedding": f"영상 제목: {video['title']}\n댓글: {comment_text}"
+                    "match": query,
+                    "text_for_embedding": f"{query} / 영상 제목: {video['title']} / 경기에 대한 팬 반응: {comment_text}"
                 }
                 comment_data.append(comment_obj)
         except Exception as e:
