@@ -1,5 +1,7 @@
 from app.services.youtube_crawler import  crawl_and_store_comments_by_query
 from app.services.extract_top_comments import extract_top_comments_per_video
+from app.db.session import SessionLocal
+from app.services.user_service import get_random_ai_user
 from app.services.vector_store import save_faiss_index_from_mongo
 from app.services.gpt_generate_post import run_rag_generation
 from app.data.fake_users import fake_users
@@ -17,6 +19,7 @@ topics = [
 # ]
 
 def main():
+    db = SessionLocal()
 
     for topic in topics:
         try:
@@ -48,7 +51,16 @@ def main():
             print(f"❌ 벡터 저장 실패: {e}")
             continue
 
-        user = random.choice(fake_users)
+        user = get_random_ai_user(db)
+        
+        if user:
+            print("✅ 선택된 AI 유저:")
+            print(f"- ID: {user.id}")
+            print(f"- 닉네임: {user.nickname}")
+            print(f"- 이메일: {user.email}")
+            print(f"- 상태: {user.status}")
+        else:
+            print("❌ 조건에 맞는 AI 유저 없음")
 
         try:
             post, used_comments = run_rag_generation(user, topic)
