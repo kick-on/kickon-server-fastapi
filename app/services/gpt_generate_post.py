@@ -2,14 +2,16 @@ from openai import OpenAI
 from app.core.config import settings
 from typing import List
 from app.services.query_search import search_comments
+from app.db.session import SessionLocal
+from app.models.user_favorite_team import UserFavoriteTeam
 
 client = OpenAI(api_key=settings.openai_api_key)
 
-def generate_post_from_comments(user: dict, topic: str, comments: List[str]) -> str:
+def generate_post_from_comments(team_name_kr: str, topic: str, comments: List[str]) -> str:
     context = "\n\n".join([f"- {c}" for c in comments])
 
     prompt = f"""
-    너는 '{user["team"]}' 팬인 축구 커뮤니티 유저야.
+    너는 '{team_name_kr}' 팬인 축구 커뮤니티 유저야.
 
     지금부터 아래 주제에 대해 축구 커뮤니티 게시판에 쓸 짧은 댓글형 글을 하나 써줘.
     주제: {topic}
@@ -36,8 +38,24 @@ def generate_post_from_comments(user: dict, topic: str, comments: List[str]) -> 
     return response.choices[0].message.content.strip()
 
 def run_rag_generation(user, topic):
+    db = SessionLocal()
+
+    favorite_team = (
+        db.query(UserFavoriteTeam)
+        .filter(UserFavoriteTeam.user_pk == user.pk)
+        .order_by(UserFavoriteTeam.priority_num.asc())
+        .first()
+    )
+
+    team_name_kr = favorite_team.team.name_kr if favorite_team else "중립"
+
     results = search_comments(topic, k=10)
     comment_texts = [doc.page_content for doc in results]
 
-    generated_post = generate_post_from_comments(user, topic, comment_texts)
+    user_with_team = {
+        "nickname": user.nickname,
+        "team_name_kr": team_name_kr,
+    }
+
+    generated_post = generate_post_from_comments(user_with_team, topic, comment_texts)
     return generated_post, comment_texts
