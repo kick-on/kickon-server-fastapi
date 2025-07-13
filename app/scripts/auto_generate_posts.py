@@ -52,9 +52,15 @@ def main():
             continue
 
         user = get_random_ai_user(db)
-        if not user:
-            print("❌ AI 유저 없음 → 스킵")
-            continue
+        
+        if user:
+            print("✅ 선택된 AI 유저:")
+            print(f"- ID: {user.id}")
+            print(f"- 닉네임: {user.nickname}")
+            print(f"- 이메일: {user.email}")
+            print(f"- 상태: {user.status}")
+        else:
+            print("❌ 조건에 맞는 AI 유저 없음")
 
         try:
             post, used_comments = run_rag_generation(user, topic)

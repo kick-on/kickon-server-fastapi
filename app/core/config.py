@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     openai_api_key: str
     youtube_api_key: str
     mongo_uri: str
+    database_url: str
 
     class Config:
         env_file = ".env"
