@@ -10,7 +10,10 @@ def reformulate_query(raw_topic: str) -> str:
     """
     단순한 키워드 기반 주제를 문맥이 풍부한 검색 쿼리 문장으로 변환
     """
-    return f"{raw_topic} 경기에 대한 팬들의 반응은 어땠을까?"
+    query_for_embedding = f"{raw_topic} 경기에서 팬들은 어떤 반응을 보였을까?"
+    #query_for_embedding = f"{raw_topic} 경기에서 어떤 결정적 장면이나 반전이 있었는지 알려줘"
+
+    return query_for_embedding
 
 def search_comments(query: str, k: int = 5) -> List[Document]:
     """
