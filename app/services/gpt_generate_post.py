@@ -36,6 +36,8 @@ def generate_post_from_comments(user: dict, topic: str, comments: List[str]) -> 
     return response.choices[0].message.content.strip()
 
 def run_rag_generation(user, topic):
-    results = search_comments(topic, k=5)
+    results = search_comments(topic, k=10)
     comment_texts = [doc.page_content for doc in results]
-    return generate_post_from_comments(user, topic, comment_texts)
+
+    generated_post = generate_post_from_comments(user, topic, comment_texts)
+    return generated_post, comment_texts
