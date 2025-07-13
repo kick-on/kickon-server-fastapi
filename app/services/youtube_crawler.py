@@ -83,7 +83,7 @@ def crawl_and_store_comments_by_query(query):
                     "like_count": comment.get("votes", 0),
                     "published_at": datetime.utcnow(),
                     "match": query,
-                    "text_for_embedding": f"{query} / 영상 제목: {video['title']} / 경기에 대한 팬 반응: {comment_text}"
+                    "text_for_embedding": f"{video['title']}에 대한 팬 반응: {comment_text}"
                 }
                 comment_data.append(comment_obj)
         except Exception as e:
