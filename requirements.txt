@@ -2,10 +2,12 @@ fastapi
 uvicorn[standard]
 python-dotenv
 pydantic-settings
-openai
-youtube-comment-downloader 
 pymongo
+youtube-comment-downloader 
 faiss-cpu
 faiss-gpu
 sentence-transformers
+openai
 langchain
+langchain-community
+langchain-huggingface
