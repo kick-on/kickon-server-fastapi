@@ -10,7 +10,7 @@ client = MongoClient(MONGO_URI)
 db = client["kickon"]
 collection = db["youtube_comments"]
 
-def extract_top_comments_per_video(topic=None, limit_per_video=50, min_length=15):
+def extract_top_comments_per_video(topic=None, limit_per_video=30, min_length=15):
     """
     각 영상에서 like_count 상위 N개의 댓글만 추출
     - 너무 짧은 댓글은 제외
