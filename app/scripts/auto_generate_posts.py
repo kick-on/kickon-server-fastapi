@@ -4,8 +4,6 @@ from app.db.session import SessionLocal
 from app.services.user_service import get_random_ai_user
 from app.services.vector_store import save_faiss_index_from_mongo
 from app.services.gpt_generate_post import run_rag_generation
-from app.data.fake_users import fake_users
-import random
 import os
 
 # 예시 경기 주제
@@ -52,7 +50,7 @@ def main():
             continue
 
         user = get_random_ai_user(db)
-        
+
         if user:
             print("✅ 선택된 AI 유저:")
             print(f"- ID: {user.id}")
