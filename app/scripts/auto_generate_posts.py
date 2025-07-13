@@ -2,24 +2,19 @@ from app.services.youtube_crawler import  crawl_and_store_comments_by_query
 from app.services.extract_top_comments import extract_top_comments_per_video
 from app.db.session import SessionLocal
 from app.services.user_service import get_random_ai_user
+from app.services.game_service import get_game_topics
 from app.services.vector_store import save_faiss_index_from_mongo
 from app.services.gpt_generate_post import run_rag_generation
 import os
 
-# 예시 경기 주제
-topics = [
-    "첼시 vs 플루미넨시"
-]
-# topics = [
-#     "첼시 vs 플루미넨시",
-#     "파리 생제르맹 vs 바이에른 뮌헨",
-#     "레알 마드리드 vs 보루시아 도르트문트"
-# ]
-
 def main():
     db = SessionLocal()
 
+    topics = get_game_topics(db)
+
     for topic in topics:
+        print(f"\n==== {topic} ====")
+        
         try:
              crawl_and_store_comments_by_query(topic)  # MongoDB 저장
         except Exception as e:
