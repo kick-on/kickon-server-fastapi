@@ -28,16 +28,27 @@ def search_videos(query, max_results=10):
     items = response.json()["items"]
 
     now = datetime.now(timezone.utc)
-    week_ago = now - timedelta(days=7)
+    # week_ago = now - timedelta(days=7)
 
     # 필터: 검색어의 양쪽 팀 이름이 모두 제목에 들어간 경우만 통과
-    teams = [part.strip() for part in query.replace("하이라이트", "").split("vs") if part.strip()]
-    
+    teams = [part.strip() for part in query.replace("하이라이트", "").split(" ") if part.strip()]
+
+    # 제외할 스포츠 키워드
+    excluded_keywords = ["농구", "야구", "배구"]
+
     filtered_items = []
     for item in items:
         title = item["snippet"]["title"].lower()
-        if all(team.lower() in title for team in teams):
-            filtered_items.append(item)
+
+        # 1. 팀 이름 모두 포함
+        if not all(team.lower() in title for team in teams):
+            continue
+
+        # 2. 제외 키워드 포함 시 skip
+        if any(keyword in title for keyword in excluded_keywords):
+            continue
+
+        filtered_items.append(item)
     
     return [
         {
@@ -46,7 +57,7 @@ def search_videos(query, max_results=10):
             "published_at": item["snippet"]["publishedAt"]
         }
         for item in filtered_items
-        if datetime.strptime(item["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) >= week_ago
+        # if datetime.strptime(item["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) >= week_ago
     ]
 
 # 댓글 크롤링 및 저장
