@@ -1,4 +1,6 @@
+import random
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
 from datetime import timedelta, datetime, timezone
 from sqlalchemy.orm import Session
 
@@ -33,44 +35,46 @@ def setup_game_day_jobs(db: Session):
 
         print(f"⚽ 경기 등록: [{start_time}] {topic}")
 
-        print(f"현재 시각 (UTC): {datetime.now(timezone.utc)}")
-        print(f"현재 시각 (Local): {datetime.now()}")
-        print(f"경기 시작 시각: {start_time} / 타입: {type(start_time)}")
+        # 1. Pre-game: 3시간 전부터 경기 시작 전까지 5~20분 간격 랜덤 실행
+        pre_start = start_time - timedelta(hours=3)
+        pre_end = start_time
+        _schedule_jobs_with_random_intervals(pre_start, pre_end, run_pregame_bot, topic, f"pregame_{game.id}", min_interval=5, max_interval=20)
 
-        # Pre-game: 3시간 전부터 30분 간격
-        scheduler.add_job(
-            run_pregame_bot,
-            'interval',
-            minutes=30,
-            start_date=start_time - timedelta(hours=3),
-            end_date=start_time,
-            timezone='UTC',
-            id=f"pregame_{game.id}",
-            kwargs={"topic": topic}
-        )
+        # 2. Real-time: 경기 중 1~3분 간격 랜덤 실행
+        real_start = start_time
+        real_end = start_time + timedelta(hours=2)
+        _schedule_jobs_with_random_intervals(real_start, real_end, run_realtime_bot, topic, f"realtime_{game.id}", min_interval=1, max_interval=3)
 
-        # Real-time: 경기 중 3분 간격
-        scheduler.add_job(
-            run_realtime_bot,
-            'interval',
-            minutes=3,
-            start_date=start_time,
-            end_date=start_time + timedelta(hours=2),
-            timezone='UTC',
-            id=f"realtime_{game.id}",
-            kwargs={"topic": topic}
-        )
-
-        # Post-game Focus: 90분 후부터 2시간 동안 10분 간격
-        scheduler.add_job(
-            run_postgame_focus_bot,
-            'interval',
-            minutes=10,
-            start_date=start_time + timedelta(minutes=90),
-            end_date=start_time + timedelta(minutes=90 + 120),
-            timezone='UTC',
-            id=f"postgame_focus_{game.id}",
-            kwargs={"topic": topic}
-        )
+        # 3. Post-game: 90분 후부터 2시간 동안 3~10분 간격 랜덤 실행
+        post_start = start_time + timedelta(minutes=90)
+        post_end = post_start + timedelta(minutes=120)
+        _schedule_jobs_with_random_intervals(post_start, post_end, run_postgame_focus_bot, topic, f"postgame_focus_{game.id}", min_interval=3, max_interval=10)
 
     print("✅ 오늘 경기 기반 스케줄 등록 완료")
+
+
+def _schedule_jobs_with_random_intervals(start_dt, end_dt, func, topic, job_prefix, min_interval, max_interval):
+    """
+    지정된 시간 범위(start_dt ~ end_dt) 내에서 min~max 분 간격으로 랜덤 실행
+    현재 시각 이후의 job만 등록함.
+    """
+    current_time = start_dt
+    i = 0
+    now = datetime.now(timezone.utc)
+
+    while current_time < end_dt:
+        interval_minutes = random.randint(min_interval, max_interval)
+        current_time += timedelta(minutes=interval_minutes)
+
+        if current_time >= end_dt:
+            break
+        if current_time <= now:
+            continue  # 현재 시각 이전이면 skip
+
+        scheduler.add_job(
+            func,
+            trigger=DateTrigger(run_date=current_time, timezone="UTC"),
+            id=f"{job_prefix}_{i}",
+            kwargs={"topic": topic}
+        )
+        i += 1
