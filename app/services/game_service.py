@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.models.game import Game
 from app.models.team import Team
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 def get_game_topics(
     db: Session,
@@ -12,8 +12,8 @@ def get_game_topics(
     """
     특정 기간 내 경기에 대해 'Home Away 하이라이트' 형태의 토픽 리스트 반환
     """
-    start_dt = datetime.combine(start_date, datetime.min.time())
-    end_dt = datetime.combine(end_date, datetime.min.time())
+    start_dt = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc)
+    end_dt = datetime.combine(end_date, datetime.min.time(), tzinfo=timezone.utc)
 
     games = (
         db.query(Game)

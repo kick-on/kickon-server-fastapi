@@ -1,5 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.bots.post_generation_bots import (
@@ -24,11 +24,18 @@ def setup_game_day_jobs(db: Session):
 
     for game in today_games:
         start_time = game.started_at
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+
         home = game.home_team.name_kr if game.home_team else "?"
         away = game.away_team.name_kr if game.away_team else "?"
         topic = f"{home} {away} 하이라이트"
 
         print(f"⚽ 경기 등록: [{start_time}] {topic}")
+
+        print(f"현재 시각 (UTC): {datetime.now(timezone.utc)}")
+        print(f"현재 시각 (Local): {datetime.now()}")
+        print(f"경기 시작 시각: {start_time} / 타입: {type(start_time)}")
 
         # Pre-game: 3시간 전부터 30분 간격
         scheduler.add_job(
@@ -37,6 +44,7 @@ def setup_game_day_jobs(db: Session):
             minutes=30,
             start_date=start_time - timedelta(hours=3),
             end_date=start_time,
+            timezone='UTC',
             id=f"pregame_{game.id}",
             kwargs={"topic": topic}
         )
@@ -48,6 +56,7 @@ def setup_game_day_jobs(db: Session):
             minutes=3,
             start_date=start_time,
             end_date=start_time + timedelta(hours=2),
+            timezone='UTC',
             id=f"realtime_{game.id}",
             kwargs={"topic": topic}
         )
@@ -59,6 +68,7 @@ def setup_game_day_jobs(db: Session):
             minutes=10,
             start_date=start_time + timedelta(minutes=90),
             end_date=start_time + timedelta(minutes=90 + 120),
+            timezone='UTC',
             id=f"postgame_focus_{game.id}",
             kwargs={"topic": topic}
         )
