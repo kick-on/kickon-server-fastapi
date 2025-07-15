@@ -1,11 +1,12 @@
+import os
+import time
 from app.services.youtube_crawler import  crawl_and_store_comments_by_query
 from app.services.extract_top_comments import extract_top_comments_per_video
-from app.db.session import SessionLocal
 from app.services.user_service import get_random_ai_user
 from app.services.game_service import get_game_topics
 from app.services.vector_store import save_faiss_index_from_mongo
 from app.services.gpt_generate_post import run_rag_generation
-import os
+from app.db.session import SessionLocal
 
 def main():
     db = SessionLocal()
@@ -13,10 +14,11 @@ def main():
     topics = get_game_topics(db)
 
     for topic in topics:
+        time.sleep(5)
         print(f"\n==== {topic} ====")
-        
+
         try:
-             crawl_and_store_comments_by_query(topic)  # MongoDB 저장
+             crawl_and_store_comments_by_query(topic)
         except Exception as e:
             print(f"❌ 크롤링 실패: {e}")
             continue
@@ -50,8 +52,6 @@ def main():
             print("✅ 선택된 AI 유저:")
             print(f"- ID: {user.id}")
             print(f"- 닉네임: {user.nickname}")
-            print(f"- 이메일: {user.email}")
-            print(f"- 상태: {user.status}")
         else:
             print("❌ 조건에 맞는 AI 유저 없음")
 
