@@ -4,20 +4,24 @@ from app.models.game import Game
 from app.models.team import Team
 from datetime import datetime, date, timedelta
 
-def get_game_topics(db: Session, since_date: str = "2025-07-01") -> List[str]:
-    since = datetime.strptime(since_date, "%Y-%m-%d")
-    today = datetime.combine(date.today(), datetime.min.time())  # 오늘 00:00
+def get_game_topics(
+    db: Session,
+    start_date: date,
+    end_date: date
+) -> List[str]:
+    """
+    특정 기간 내 경기에 대해 'Home Away 하이라이트' 형태의 토픽 리스트 반환
+    """
+    start_dt = datetime.combine(start_date, datetime.min.time())
+    end_dt = datetime.combine(end_date, datetime.min.time())
 
     games = (
         db.query(Game)
-        .filter(Game.started_at >= since, Game.started_at <= today)
+        .filter(Game.started_at >= start_dt, Game.started_at < end_dt)
         .all()
     )
 
-    print(f"[DEBUG] since: {since}, today: {today}")
-    print(f"[DEBUG] {len(games)} games found between the range:")
-    for g in games:
-        print(f"  - Game ID: {g.pk}, started_at: {g.started_at}")
+    print(f"[DEBUG] {len(games)} games found between {start_date} and {end_date}")
 
     team_dict = {team.pk: team.name_kr for team in db.query(Team).all()}
 
@@ -27,6 +31,7 @@ def get_game_topics(db: Session, since_date: str = "2025-07-01") -> List[str]:
         away = team_dict.get(game.away_team_pk, "알 수 없음")
         if home and away:
             topics.append(f"{home} {away} 하이라이트")
+
     return topics
 
 def has_game_today(db: Session):
