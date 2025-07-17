@@ -5,6 +5,7 @@ from app.services.query_search import search_comments
 from app.db.session import SessionLocal
 from app.models.user_favorite_team import UserFavoriteTeam
 import json
+import re
 
 client = OpenAI(api_key=settings.openai_api_key)
 
@@ -28,13 +29,12 @@ def generate_post_from_comments(team_name_kr: str, topic: str, comments: List[st
     - 위 팬 반응을 참고하되, 경기의 특징적인 순간이나 전반적인 흐름을 드러낼 수 있게 써줘.
     - 단순히 팀 이름에 대해 언급하는 건 하지마.
 
-    - 반드시 다음의 JSON 형식으로 출력해줘: 
+    - 반드시 다음의 JSON 형식으로 출력해줘:
     ```json
     {{
     "title": "...",
     "content": "..."
     }}
-    ```
 
     """
 
@@ -46,24 +46,29 @@ def generate_post_from_comments(team_name_kr: str, topic: str, comments: List[st
     )
 
     content = response.choices[0].message.content.strip()
+    cleaned = strip_code_block(content)
 
     # JSON 파싱 시도
     try:
-        parsed = json.loads(content)
+        parsed = json.loads(cleaned)
         title = parsed.get("title", "").strip()
         body = parsed.get("content", "").strip()
     except Exception as e:
         print(f"❌ JSON 파싱 실패: {e}")
-        print("응답 내용:", content)
+        print("응답 내용:", cleaned)
         return {
             "title": topic,
-            "contents": content,
+            "contents": cleaned,
         }
 
     return {
         "title": title,
         "contents": body,
     }
+
+def strip_code_block(text: str) -> str:
+    # ```json ... ``` 같은 블록 제거
+    return re.sub(r"^```json\s*|```$", "", text.strip(), flags=re.MULTILINE)
 
 def run_rag_generation(user, topic):
     db = SessionLocal()
