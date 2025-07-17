@@ -6,6 +6,7 @@ from app.services.user_service import get_random_ai_user
 from app.services.vector_store import save_faiss_index_from_mongo
 from app.services.gpt_generate_post import run_rag_generation
 from app.db.session import SessionLocal
+from app.services.board_service import save_generated_post
 
 # 일반 상황용 (비시즌, 일정 없음 → 트렌딩 키워드 기반)
 def run_trend_bot():
@@ -94,15 +95,24 @@ def _generate_post_with_youtube(db, topic: str):
         print("❌ 조건에 맞는 AI 유저 없음")
         return
 
-    print(f"✅ 선택된 AI 유저: {user.nickname} ({user.email})")
+    print(f"✅ 선택된 AI 유저: {user.nickname} ({user.pk})")
 
     try:
-        post, used_comments = run_rag_generation(user, topic)
+        generated, used_comments = run_rag_generation(user, topic)
 
-        print(f"📣 생성된 게시글:\n{post}")
+        print(f"📣 생성된 게시글:\n{generated['title']}\n{generated['contents']}")
         print("\n🔍 사용된 댓글:")
         for c in used_comments:
             print(f"- {c}")
-        # TODO: 게시글 저장 또는 업로드
+        
+        saved = save_generated_post(
+            db=db,
+            user_pk=user.pk,
+            title=generated["title"],
+            contents=generated["contents"],
+            has_image=False
+        )
+        print(f"✅ 게시글 저장 완료! pk = {saved.pk}")
+
     except Exception as e:
         print(f"❌ 게시글 생성 실패: {e}")
