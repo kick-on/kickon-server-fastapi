@@ -13,3 +13,4 @@ class User(Base):
     status = Column(String)
 
     favorite_teams = relationship("UserFavoriteTeam", back_populates="user")
+    boards = relationship("Board", back_populates="user")   

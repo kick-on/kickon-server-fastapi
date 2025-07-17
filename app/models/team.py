@@ -17,3 +17,4 @@ class Team(Base):
     logo_url = Column(String)
 
     favorite_for_users = relationship("UserFavoriteTeam", back_populates="team")
+    boards = relationship("Board", back_populates="team")
