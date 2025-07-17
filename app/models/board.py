@@ -16,8 +16,8 @@ class Board(Base):
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     etc = Column(String, nullable=True)
 
-    user_pk = Column(Integer, ForeignKey("user.pk"), nullable=False)
-    team_pk = Column(Integer, ForeignKey("team.pk"), nullable=True)
+    user_pk = Column(Integer, ForeignKey("User.pk"), nullable=False)
+    team_pk = Column(Integer, ForeignKey("Team.pk"), nullable=True)
 
     title = Column(String(255), nullable=False)
     contents = Column(Text, nullable=False)
