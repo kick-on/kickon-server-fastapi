@@ -31,13 +31,24 @@ def search_videos(query, max_results=10):
     week_ago = now - timedelta(days=7)
 
     # 필터: 검색어의 양쪽 팀 이름이 모두 제목에 들어간 경우만 통과
-    teams = [part.strip() for part in query.replace("하이라이트", "").split("vs") if part.strip()]
-    
+    teams = [part.strip() for part in query.replace("하이라이트", "").split(" ") if part.strip()]
+
+    # 제외할 스포츠 키워드
+    excluded_keywords = ["농구", "야구", "배구"]
+
     filtered_items = []
     for item in items:
         title = item["snippet"]["title"].lower()
-        if all(team.lower() in title for team in teams):
-            filtered_items.append(item)
+
+        # 1. 팀 이름 모두 포함
+        if not all(team.lower() in title for team in teams):
+            continue
+
+        # 2. 제외 키워드 포함 시 skip
+        if any(keyword in title for keyword in excluded_keywords):
+            continue
+
+        filtered_items.append(item)
     
     return [
         {
@@ -81,7 +92,7 @@ def crawl_and_store_comments_by_query(query):
                     "author": comment.get("author", "unknown"),
                     "text": comment_text,
                     "like_count": comment.get("votes", 0),
-                    "published_at": datetime.utcnow(),
+                    "published_at": datetime.now(timezone.utc),
                     "match": query,
                     "text_for_embedding": f"{video['title']}에 대한 팬 반응: {comment_text}"
                 }
@@ -97,13 +108,14 @@ def crawl_and_store_comments_by_query(query):
             continue
 
         doc = {
+            "source": "youtube",
             "video_id": video_id,
             "video_title": video["title"],
             "video_url": video_url,
             "team_mentioned": query,
             "match_date": None,
             "video_published_at": video["published_at"],
-            "crawled_at": datetime.utcnow(),
+            "crawled_at": datetime.now(timezone.utc),
             "comments": comment_data
         }
 
