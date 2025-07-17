@@ -92,7 +92,7 @@ def crawl_and_store_comments_by_query(query):
                     "author": comment.get("author", "unknown"),
                     "text": comment_text,
                     "like_count": comment.get("votes", 0),
-                    "published_at": datetime.utcnow(),
+                    "published_at": datetime.now(timezone.utc),
                     "match": query,
                     "text_for_embedding": f"{video['title']}에 대한 팬 반응: {comment_text}"
                 }
@@ -108,13 +108,14 @@ def crawl_and_store_comments_by_query(query):
             continue
 
         doc = {
+            "source": "youtube",
             "video_id": video_id,
             "video_title": video["title"],
             "video_url": video_url,
             "team_mentioned": query,
             "match_date": None,
             "video_published_at": video["published_at"],
-            "crawled_at": datetime.utcnow(),
+            "crawled_at": datetime.now(timezone.utc),
             "comments": comment_data
         }
 
