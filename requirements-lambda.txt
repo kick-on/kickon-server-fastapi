@@ -1,9 +1,7 @@
-python-dotenv
 pydantic-settings
 pymongo
 youtube-comment-downloader 
 faiss-cpu
-faiss-gpu
 sentence-transformers
 openai
 langchain
@@ -11,4 +9,3 @@ langchain-community
 langchain-huggingface
 sqlalchemy 
 pymysql
-apscheduler
