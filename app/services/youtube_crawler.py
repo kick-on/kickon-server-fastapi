@@ -1,16 +1,11 @@
 from youtube_comment_downloader import YoutubeCommentDownloader
-from pymongo import MongoClient
 from datetime import datetime, timezone, timedelta
 import requests
+from app.services.mongo_utils import save_youtube_comment_doc, is_video_already_crawled
 
 from app.core.config import settings
 
 API_KEY = settings.youtube_api_key
-
-# MongoDB 연결
-client = MongoClient(settings.mongo_uri)
-db = client["kickon"]
-collection = db["youtube_comments"]
 
 # 영상 검색 (업로드일 기준으로 필터링)
 def search_videos(query, max_results=10):
@@ -76,7 +71,7 @@ def crawl_and_store_comments_by_query(query):
         print(f"\n🎬 [3] 영상 제목: {video['title']} / ID: {video_id}")
 
         # 이미 크롤링한 영상인지 확인
-        if collection.find_one({"video_id": video_id}):
+        if is_video_already_crawled(video_id):
             print(f"⏩ 이미 크롤링한 영상입니다: {video['title']}")
             continue
 
@@ -114,12 +109,12 @@ def crawl_and_store_comments_by_query(query):
             "video_url": video_url,
             "team_mentioned": query,
             "match_date": None,
-            "video_published_at": video["published_at"],
+            "video_published_at": datetime.strptime(video["published_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc),
             "crawled_at": datetime.now(timezone.utc),
             "comments": comment_data
         }
 
         try:
-            collection.insert_one(doc)
+            save_youtube_comment_doc(doc)
         except Exception as e:
             print(f"❌ MongoDB 저장 중 문제 발생: {e}")
