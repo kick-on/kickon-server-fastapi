@@ -12,3 +12,5 @@ langchain-huggingface
 sqlalchemy 
 pymysql
 apscheduler
+requests 
+beautifulsoup4
