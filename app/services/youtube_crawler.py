@@ -1,7 +1,7 @@
 from youtube_comment_downloader import YoutubeCommentDownloader
 from datetime import datetime, timezone, timedelta
 import requests
-from app.services.mongo_utils import save_youtube_comment_doc, is_video_already_crawled
+from app.services.mongo_utils import save_youtube_comment_doc
 
 from app.core.config import settings
 
@@ -69,11 +69,6 @@ def crawl_and_store_comments_by_query(query):
     for video in videos:
         video_id = video["video_id"]
         print(f"\n🎬 [3] 영상 제목: {video['title']} / ID: {video_id}")
-
-        # 이미 크롤링한 영상인지 확인
-        if is_video_already_crawled(video_id):
-            print(f"⏩ 이미 크롤링한 영상입니다: {video['title']}")
-            continue
 
         downloader = YoutubeCommentDownloader()
         video_url = f"https://www.youtube.com/watch?v={video_id}"
