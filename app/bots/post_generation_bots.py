@@ -1,11 +1,11 @@
 import os
 import shutil
-from app.services.youtube_crawler import crawl_and_store_comments_by_query
-from app.services.extract_top_comments import extract_top_comments_per_video
+from app.crawlers.youtube_crawler import crawl_and_store_comments_by_query
+from app.rag.extract_top_comments import extract_top_comments_per_video
 from app.services.user_service import get_random_ai_user
-from app.services.vector_store import save_faiss_index_from_mongo
-from app.services.gpt_generate_post import run_rag_generation
-from app.db.session import SessionLocal
+from app.rag.vector_store import save_faiss_index_from_mongo
+from app.rag.gpt_generate_post import run_rag_generation
+from app.db.sql.session import SessionLocal
 from app.services.board_service import save_generated_post
 
 # 일반 상황용 (비시즌, 일정 없음 → 트렌딩 키워드 기반)

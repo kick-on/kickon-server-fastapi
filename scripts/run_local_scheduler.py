@@ -2,7 +2,7 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timezone
-from app.db.session import SessionLocal
+from app.db.sql.session import SessionLocal
 from app.scheduler.post_generation_scheduler import scheduler, setup_game_day_jobs
 
 if __name__ == "__main__":

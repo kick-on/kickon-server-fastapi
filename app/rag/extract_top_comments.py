@@ -7,8 +7,8 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 
-db = client["kickon"]
-collection = db["youtube_comments"]
+# -------- YouTube 댓글 추출 -------- #
+youtube_collection = client["kickon"]["youtube_comments"]
 
 def extract_top_comments_per_video(topic=None, limit_per_video=30, min_length=15):
     """
@@ -20,7 +20,7 @@ def extract_top_comments_per_video(topic=None, limit_per_video=30, min_length=15
     if topic:
         query = {"team_mentioned": topic}
 
-    all_docs = list(collection.find(query))
+    all_docs = list(youtube_collection.find(query))
     selected_comments = []
 
     for doc in all_docs:
@@ -54,3 +54,45 @@ def extract_top_comments_per_video(topic=None, limit_per_video=30, min_length=15
 
     print(f"총 {len(selected_comments)}개 대표 댓글 추출 완료")
     return selected_comments
+
+# -------- FM코리아 게시글 추출 -------- #
+fmkorea_collection = client["kickon"]["fmkorea_posts"]
+
+def extract_top_fmkorea_posts(limit=20, min_length=10, sort_by="like_count"):
+    """
+    FM코리아에서 상위 인기 게시글 추출
+    - 정렬 기준: like_count (기본값)
+    - 너무 짧은 게시글 제외
+    - 반환: List[dict]
+    """
+    assert sort_by in ["view_count", "like_count"], "sort_by는 view_count 또는 like_count 여야 함"
+    
+    query = {
+        "text_for_embedding": {"$exists": True},
+        sort_by: {"$ne": None},
+    }
+
+    # 정렬 + 최소 길이 필터
+    posts = list(
+        fmkorea_collection.find(query)
+        .sort(sort_by, -1)
+        .limit(limit * 2)
+    )
+
+    selected_posts = []
+    for post in posts:
+        text = post.get("text_for_embedding", "")
+        if len(text) >= min_length:
+            selected_posts.append({
+                "url": post["url"],
+                "title": post["title"],
+                "text": text,
+                "view_count": post.get("view_count", 0),
+                "like_count": post.get("like_count", 0),
+                "created_at": post.get("post_datetime"),
+            })
+        if len(selected_posts) >= limit:
+            break
+
+    print(f"총 {len(selected_posts)}개 인기 게시글 추출 완료")
+    return selected_posts
