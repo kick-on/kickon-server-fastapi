@@ -1,7 +1,8 @@
 import os
 import shutil
 from app.crawlers.youtube_crawler import crawl_and_store_comments_by_query
-from app.rag.extract_top_comments import extract_top_comments_per_video
+from app.crawlers.fmkorea_crawler import crawl_fmkorea_board 
+from app.rag.extract_top_comments import extract_top_comments_per_video, extract_top_fmkorea_posts
 from app.services.user_service import get_random_ai_user
 from app.rag.vector_store import save_faiss_index_from_mongo
 from app.rag.gpt_generate_post import run_rag_generation
@@ -32,7 +33,7 @@ def run_pregame_bot(topic: str = None):
         return
 
     db = SessionLocal()
-    print(f"[Pre-Game] 커뮤니티 크롤링 미구현 → 스킵: {topic}")
+    _generate_post_with_fmkorea(db, topic)
     db.close()
 
 # 실시간 경기 중 (3~5분 간격, 네이버 스포츠 중계 댓글 대상)
@@ -43,7 +44,7 @@ def run_realtime_bot(topic: str = None):
         return
 
     db = SessionLocal()
-    print(f"[Real-Time] 네이버 중계 댓글 크롤링 미구현 → 스킵: {topic}")
+    _generate_post_with_fmkorea(db, topic)
     db.close()
 
 # 경기 직후 (하이라이트 및 팬 반응 분석)
@@ -58,22 +59,16 @@ def run_postgame_focus_bot(topic: str = None):
     db.close()
 
 # 공통 로직
-def _generate_post_with_youtube(db, topic: str):
-    print(f"\n==== {topic} ====")
+def _generate_post_with_source(db, topic: str, source_loader_fn, source_name: str):
+    print(f"\n==== {topic} ({source_name}) ====")
 
     try:
-        crawl_and_store_comments_by_query(topic)
-    except Exception as e:
-        print(f"❌ 유튜브 댓글 크롤링 실패: {e}")
-        return
-
-    try:
-        top_comments = extract_top_comments_per_video(topic)
-        if not top_comments:
-            print(f"❌ {topic}에 대표 댓글 없음 → 스킵")
+        sources = source_loader_fn(topic)
+        if not sources:
+            print(f"❌ {topic}에 사용할 {source_name} 데이터 없음 → 스킵")
             return
     except Exception as e:
-        print(f"❌ 대표 댓글 추출 실패: {e}")
+        print(f"❌ {source_name} 데이터 로딩 실패: {e}")
         return
 
     try:
@@ -81,10 +76,10 @@ def _generate_post_with_youtube(db, topic: str):
         if os.path.exists(faiss_dir):
             shutil.rmtree(faiss_dir)
 
-        save_faiss_index_from_mongo(top_comments)
+        save_faiss_index_from_mongo(sources)
 
         if not os.path.exists(os.path.join(faiss_dir, "index.faiss")):
-            print("❌ FAISS 인덱스 생성 실패 → 스킵")
+            print(f"❌ FAISS 인덱스 생성 실패 → 스킵")
             return
     except Exception as e:
         print(f"❌ 벡터 저장 실패: {e}")
@@ -98,12 +93,12 @@ def _generate_post_with_youtube(db, topic: str):
     print(f"✅ 선택된 AI 유저: {user.nickname} ({user.pk})")
 
     try:
-        generated, used_comments = run_rag_generation(user, topic)
+        generated, used_sources = run_rag_generation(user, topic)
 
         print(f"📣 생성된 게시글:\n{generated['title']}\n{generated['contents']}")
-        print("\n🔍 사용된 댓글:")
-        for c in used_comments:
-            print(f"- {c}")
+        print("\n🔍 사용된 소스:")
+        for s in used_sources:
+            print(f"- {s}")
         
         saved = save_generated_post(
             db=db,
@@ -116,3 +111,31 @@ def _generate_post_with_youtube(db, topic: str):
 
     except Exception as e:
         print(f"❌ 게시글 생성 실패: {e}")
+
+def _generate_post_with_youtube(db, topic: str):
+    try:
+        crawl_and_store_comments_by_query(topic)
+    except Exception as e:
+        print(f"❌ 유튜브 댓글 크롤링 실패: {e}")
+        return
+
+    _generate_post_with_source(
+        db=db,
+        topic=topic,
+        source_loader_fn=extract_top_comments_per_video,
+        source_name="YouTube"
+    )
+
+def _generate_post_with_fmkorea(db, topic: str):
+    try:
+        crawl_and_store_comments_by_query(topic)
+    except Exception as e:
+        print(f"❌ 에펨코리아 크롤링 실패: {e}")
+        return
+    
+    _generate_post_with_source(
+        db=db,
+        topic=topic,
+        source_loader_fn=lambda t: extract_top_fmkorea_posts(limit=20, sort_by="like_count"),
+        source_name="FMKorea"
+    )

@@ -9,7 +9,7 @@ import time
 import cloudscraper
 import sys
 
-from app.services.mongo_utils import save_fmkorea_post_doc
+from app.db.mongo.mongo_utils import save_fmkorea_post_doc
 
 BASE_URL = "https://www.fmkorea.com"
 

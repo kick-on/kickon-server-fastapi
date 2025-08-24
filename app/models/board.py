@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 
-from app.db.base_class import Base
+from app.db.sql.base_class import Base
 
 class Board(Base):
     __tablename__ = "Board"
