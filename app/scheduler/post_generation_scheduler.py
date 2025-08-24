@@ -25,9 +25,10 @@ def setup_game_day_jobs(db: Session):
         if start_time.tzinfo is None:
             start_time = start_time.replace(tzinfo=timezone.utc)
 
-        home = game.home_team.name_kr if game.home_team else "?"
-        away = game.away_team.name_kr if game.away_team else "?"
-        topic = f"{home} {away} 하이라이트"
+        if not game.home_team or not game.away_team:
+            print(f"❌ 팀 정보 누락 → 스킵: game_id={game.id}")
+            continue
+        topic = f"{game.home_team.name_kr} {game.away_team.name_kr} 하이라이트"
 
         print(f"⚽ 경기 등록: [{start_time}] {topic}")
 
@@ -65,7 +66,7 @@ def _schedule_jobs_with_random_intervals(start_dt, end_dt, topic, bot_type, min_
         if current_time <= now:
             continue  # 현재 시각 이전이면 skip
 
-        register_lambda_schedule(topic, bot_type, current_time)
+        register_lambda_schedule(current_time, bot_type, topic)
 
 events = boto3.client('events')
 
@@ -116,6 +117,6 @@ def register_lambda_schedule(run_at, bot_type, topic):
             SourceArn=source_arn
         )
     except lambda_client.exceptions.ResourceConflictException:
-        print(f"✅ Permission already exists for {rule_name}")
+        print(f"Permission already exists for {rule_name}")
 
     print(f"📌 Lambda scheduled: {rule_name} ({schedule_expression})")
