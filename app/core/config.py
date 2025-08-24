@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     youtube_api_key: str
     mongo_uri: str
     database_url: str
+    
+    aws_account_id: str
+    aws_region: str
+    lambda_function_name: str
 
     class Config:
         env_file = ".env"
