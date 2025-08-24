@@ -15,7 +15,7 @@ jobs:
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME }}
       IMAGE_NAME: kickon-lambda-bot
 
