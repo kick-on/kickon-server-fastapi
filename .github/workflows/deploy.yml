@@ -54,6 +54,6 @@ jobs:
         run: |
           IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest
 
-          aws lambda update-function-code \
+          aws lambda update-function-configuration \
             --function-name $LAMBDA_FUNCTION_NAME \
             --image-uri $IMAGE_URI
