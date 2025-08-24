@@ -47,8 +47,9 @@ jobs:
             --platform linux/arm64 \
             --provenance=false \
             --push \
-            -t $IMAGE_URI .
-
+            -t $IMAGE_URI \
+            .
+            
       - name: Update Lambda function
         run: |
           IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest
