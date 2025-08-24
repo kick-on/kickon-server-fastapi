@@ -36,7 +36,8 @@ def get_game_topics(
 
 def has_game_today(db: Session):
     """오늘 날짜에 해당하는 경기 목록을 반환. 없으면 빈 리스트."""
-    today = datetime.utcnow().date()
+    now = datetime.now(timezone.utc)
+    today = datetime.combine(now.date(), datetime.min.time(), tzinfo=timezone.utc)
     tomorrow = today + timedelta(days=1)
 
     games = (

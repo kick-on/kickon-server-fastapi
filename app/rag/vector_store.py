@@ -77,4 +77,4 @@ def save_faiss_index_from_mongo(top_comments):
         save_faiss_index(np.array(embeddings), metadata)
         print(f"✅ 총 {len(embeddings)}개 문장 벡터 저장 완료")
     else:
-        print("⚠️ 저장할 임베딩이 없습니다")
+        print("❌ 저장할 임베딩이 없습니다")
