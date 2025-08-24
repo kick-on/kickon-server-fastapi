@@ -5,11 +5,14 @@ from sqlalchemy.orm import Session
 import boto3
 import json
 import uuid
-import os
+from app.core.config import settings
 
 from app.services.game_service import has_game_today
 
 scheduler = BackgroundScheduler()
+
+events = boto3.client('events')
+lambda_client = boto3.client('lambda')
 
 def setup_game_day_jobs(db: Session):
     today_games = has_game_today(db)
@@ -68,8 +71,6 @@ def _schedule_jobs_with_random_intervals(start_dt, end_dt, topic, bot_type, min_
 
         register_lambda_schedule(current_time, bot_type, topic)
 
-events = boto3.client('events')
-
 def register_lambda_schedule(run_at, bot_type, topic):
     """
     EventBridge 규칙을 생성하고 Lambda를 스케줄링합니다.
@@ -79,9 +80,11 @@ def register_lambda_schedule(run_at, bot_type, topic):
     run_at_utc = run_at.astimezone(timezone.utc)
     schedule_expression = f"at({run_at_utc.strftime('%Y-%m-%dT%H:%M:%S')})"
     
-    account_id = os.environ["AWS_ACCOUNT_ID"]
-    region = os.environ.get("AWS_REGION", "ap-northeast-2")
-    lambda_arn = f"arn:aws:lambda:{region}:{account_id}:function:kickon-lambda-bot"
+    region = settings.aws_region
+    account_id = settings.aws_account_id
+    lambda_function = settings.lambda_function_name
+    
+    lambda_arn = f"arn:aws:lambda:{region}:{account_id}:function:{lambda_function}"
     source_arn = f"arn:aws:events:{region}:{account_id}:rule/{rule_name}"
 
     # EventBridge 규칙 생성
@@ -108,15 +111,14 @@ def register_lambda_schedule(run_at, bot_type, topic):
 
     # Lambda 권한 부여
     try: 
-        lambda_client = boto3.client("lambda")
         lambda_client.add_permission(
-            FunctionName="kickon-lambda-bot",
+            FunctionName=lambda_function,
             StatementId=str(uuid.uuid4()),
             Action="lambda:InvokeFunction",
             Principal="events.amazonaws.com",
             SourceArn=source_arn
         )
     except lambda_client.exceptions.ResourceConflictException:
-        print(f"Permission already exists for {rule_name}")
+        print(f"Permission already exists for {rule_name} — skipping duplicate permission.")
 
     print(f"📌 Lambda scheduled: {rule_name} ({schedule_expression})")
