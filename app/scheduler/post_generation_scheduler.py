@@ -1,15 +1,12 @@
 import random
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.date import DateTrigger
 from datetime import timedelta, datetime, timezone
 from sqlalchemy.orm import Session
+import boto3
+import json
+import uuid
+import os
 
-from app.bots.post_generation_bots import (
-    run_trend_bot,
-    run_pregame_bot,
-    run_realtime_bot,
-    run_postgame_focus_bot,
-)
 from app.services.game_service import has_game_today
 
 scheduler = BackgroundScheduler()
@@ -18,8 +15,7 @@ def setup_game_day_jobs(db: Session):
     today_games = has_game_today(db)
 
     if not today_games:
-        print("🕒 오늘 경기가 없음 → 일반 트렌드 봇만 스케줄 등록")
-        scheduler.add_job(run_trend_bot, 'interval', hours=2)
+        print("🕒 오늘 경기가 없음 → [미구현] 일반 트렌드 봇만 스케줄 등록")
         return
     
     print(f"📌 오늘 경기 수: {len(today_games)}")
@@ -38,28 +34,26 @@ def setup_game_day_jobs(db: Session):
         # 1. Pre-game: 3시간 전부터 경기 시작 전까지 5~20분 간격 랜덤 실행
         pre_start = start_time - timedelta(hours=3)
         pre_end = start_time
-        _schedule_jobs_with_random_intervals(pre_start, pre_end, run_pregame_bot, topic, f"pregame_{game.id}", min_interval=5, max_interval=20)
+        _schedule_jobs_with_random_intervals(pre_start, pre_end, topic, "pregame", 5, 20)
 
         # 2. Real-time: 경기 중 1~3분 간격 랜덤 실행
         real_start = start_time
         real_end = start_time + timedelta(hours=2)
-        _schedule_jobs_with_random_intervals(real_start, real_end, run_realtime_bot, topic, f"realtime_{game.id}", min_interval=1, max_interval=3)
+        _schedule_jobs_with_random_intervals(real_start, real_end, topic, "realtime", 1, 3)
 
         # 3. Post-game: 90분 후부터 2시간 동안 3~10분 간격 랜덤 실행
         post_start = start_time + timedelta(minutes=90)
         post_end = post_start + timedelta(minutes=120)
-        _schedule_jobs_with_random_intervals(post_start, post_end, run_postgame_focus_bot, topic, f"postgame_focus_{game.id}", min_interval=3, max_interval=10)
+        _schedule_jobs_with_random_intervals(post_start, post_end, topic, "postgame", 3, 10)
 
     print("✅ 오늘 경기 기반 스케줄 등록 완료")
 
-
-def _schedule_jobs_with_random_intervals(start_dt, end_dt, func, topic, job_prefix, min_interval, max_interval):
+def _schedule_jobs_with_random_intervals(start_dt, end_dt, topic, bot_type, min_interval, max_interval):
     """
     지정된 시간 범위(start_dt ~ end_dt) 내에서 min~max 분 간격으로 랜덤 실행
     현재 시각 이후의 job만 등록함.
     """
     current_time = start_dt
-    i = 0
     now = datetime.now(timezone.utc)
 
     while current_time < end_dt:
@@ -71,10 +65,57 @@ def _schedule_jobs_with_random_intervals(start_dt, end_dt, func, topic, job_pref
         if current_time <= now:
             continue  # 현재 시각 이전이면 skip
 
-        scheduler.add_job(
-            func,
-            trigger=DateTrigger(run_date=current_time, timezone="UTC"),
-            id=f"{job_prefix}_{i}",
-            kwargs={"topic": topic}
+        register_lambda_schedule(topic, bot_type, current_time)
+
+events = boto3.client('events')
+
+def register_lambda_schedule(run_at, bot_type, topic):
+    """
+    EventBridge 규칙을 생성하고 Lambda를 스케줄링합니다.
+    schedule_expression은 cron 또는 rate 형식.
+    """
+    rule_name = f"kickon-{bot_type}-{uuid.uuid4().hex[:8]}"
+    run_at_utc = run_at.astimezone(timezone.utc)
+    schedule_expression = f"at({run_at_utc.strftime('%Y-%m-%dT%H:%M:%S')})"
+    
+    account_id = os.environ["AWS_ACCOUNT_ID"]
+    region = os.environ.get("AWS_REGION", "ap-northeast-2")
+    lambda_arn = f"arn:aws:lambda:{region}:{account_id}:function:kickon-lambda-bot"
+    source_arn = f"arn:aws:events:{region}:{account_id}:rule/{rule_name}"
+
+    # EventBridge 규칙 생성
+    events.put_rule(
+        Name=rule_name,
+        ScheduleExpression=schedule_expression,
+        State="ENABLED"
+    )
+
+    # Lambda 타겟 설정
+    target_input = json.dumps({
+        "task": "run_bot",
+        "bot_type": bot_type,
+        "topic": topic
+    })
+    events.put_targets(
+        Rule=rule_name,
+        Targets=[{
+            "Id": "1",
+            "Arn": lambda_arn,
+            "Input": target_input
+        }]
+    )
+
+    # Lambda 권한 부여
+    try: 
+        lambda_client = boto3.client("lambda")
+        lambda_client.add_permission(
+            FunctionName="kickon-lambda-bot",
+            StatementId=str(uuid.uuid4()),
+            Action="lambda:InvokeFunction",
+            Principal="events.amazonaws.com",
+            SourceArn=source_arn
         )
-        i += 1
+    except lambda_client.exceptions.ResourceConflictException:
+        print(f"✅ Permission already exists for {rule_name}")
+
+    print(f"📌 Lambda scheduled: {rule_name} ({schedule_expression})")

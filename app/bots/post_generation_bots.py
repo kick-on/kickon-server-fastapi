@@ -128,7 +128,7 @@ def _generate_post_with_youtube(db, topic: str):
 
 def _generate_post_with_fmkorea(db, topic: str):
     try:
-        crawl_and_store_comments_by_query(topic)
+        crawl_fmkorea_board(topic)
     except Exception as e:
         print(f"❌ 에펨코리아 크롤링 실패: {e}")
         return
