@@ -17,7 +17,6 @@ def manual_run(bot_type: str, topic: str = None):
         print("❌ 지원되지 않는 bot_type")
 
 if __name__ == "__main__":
-    # 원하는 값으로 바꾸세요
     bot_type = "postgame"    # pregame / realtime / postgame / trend
     topic = "첼시 리버풀 하이라이트"
 

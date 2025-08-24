@@ -1,7 +1,7 @@
 from youtube_comment_downloader import YoutubeCommentDownloader
 from datetime import datetime, timezone, timedelta
 import requests
-from app.services.mongo_utils import save_youtube_comment_doc
+from app.db.mongo.mongo_utils import save_youtube_comment_doc
 
 from app.core.config import settings
 

@@ -2,8 +2,7 @@ python-dotenv
 pydantic-settings
 pymongo
 youtube-comment-downloader 
-faiss-cpu
-faiss-gpu
+faiss-cpu==1.7.4
 sentence-transformers
 openai
 langchain
@@ -14,3 +13,5 @@ pymysql
 apscheduler
 requests 
 beautifulsoup4
+cloudscraper
+boto3
