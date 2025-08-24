@@ -15,7 +15,7 @@ jobs:
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME }}
       IMAGE_NAME: kickon-lambda-bot
 
@@ -41,6 +41,8 @@ jobs:
         run: |
           IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest
 
+          echo "🛠️ Building and pushing image: $IMAGE_URI"
+          
           docker buildx build \
             --platform linux/arm64 \
             --provenance=false \
@@ -53,4 +55,4 @@ jobs:
 
           aws lambda update-function-code \
             --function-name $LAMBDA_FUNCTION_NAME \
-            --image-uri $IMAGE_URI .
+            --image-uri $IMAGE_URI
