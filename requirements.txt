@@ -1,0 +1,17 @@
+python-dotenv
+pydantic-settings
+pymongo
+youtube-comment-downloader 
+faiss-cpu==1.7.4
+sentence-transformers
+openai
+langchain
+langchain-community
+langchain-huggingface
+sqlalchemy 
+pymysql
+apscheduler
+requests 
+beautifulsoup4
+cloudscraper
+boto3
