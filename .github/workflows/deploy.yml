@@ -13,6 +13,12 @@ jobs:
     name: Build & Deploy to Lambda
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      LAMBDA_FUNCTION_NAME: ${{ vars.LAMBDA_FUNCTION_NAME }}
+      IMAGE_NAME: kickon-lambda-bot
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,28 +31,31 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image to ECR
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          provenance: false
-          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.IMAGE_NAME }}:latest
-          platforms: linux/arm64
-          cache-from: type=registry,ref=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.IMAGE_NAME }}:buildcache,mode=max
+      - name: Build and push Docker image to ECR (with cache)
+        run: |
+          IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest
+          CACHE_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:buildcache
+
+          docker buildx build \
+            --platform linux/arm64 \
+            --provenance=false \
+            --push \
+            --cache-from type=registry,ref=$CACHE_IMAGE \
+            --cache-to type=registry,ref=$CACHE_IMAGE,mode=max \
+            -t $IMAGE_URI \
+            .
 
       - name: Update Lambda function
         run: |
-          IMAGE_URI=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.IMAGE_NAME }}:latest
+          IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest
 
           aws lambda update-function-code \
-            --function-name ${{ vars.LAMBDA_FUNCTION_NAME }} \
+            --function-name $LAMBDA_FUNCTION_NAME \
             --image-uri $IMAGE_URI \
-            --region ${{ vars.AWS_REGION }}
+            --region $AWS_REGION
