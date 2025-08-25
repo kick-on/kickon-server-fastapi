@@ -40,8 +40,6 @@ jobs:
       - name: Build and push Docker image to ECR
         run: |
           IMAGE_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest
-
-          echo "🛠️ Building and pushing image: $IMAGE_URI"
           
           docker buildx build \
             --platform linux/arm64 \
