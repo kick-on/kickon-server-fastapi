@@ -74,12 +74,13 @@ def _schedule_jobs_with_random_intervals(start_dt, end_dt, topic, bot_type, min_
 def register_lambda_schedule(run_at, bot_type, topic):
     """
     EventBridge 규칙을 생성하고 Lambda를 스케줄링합니다.
-    schedule_expression은 cron 또는 rate 형식.
+    schedule_expression은 cron 형식.
     """
     rule_name = f"kickon-{bot_type}-{uuid.uuid4().hex[:8]}"
     run_at_utc = run_at.astimezone(timezone.utc)
-    schedule_expression = f"at({run_at_utc.strftime('%Y-%m-%dT%H:%M:%S')})"
     
+    schedule_expression = f"cron({run_at_utc.minute} {run_at_utc.hour} {run_at_utc.day} {run_at_utc.month} ? {run_at_utc.year})"
+        
     region = settings.aws_region
     account_id = settings.aws_account_id
     lambda_function = settings.lambda_function_name
@@ -110,15 +111,17 @@ def register_lambda_schedule(run_at, bot_type, topic):
     )
 
     # Lambda 권한 부여
-    try: 
+    try:
         lambda_client.add_permission(
             FunctionName=lambda_function,
-            StatementId=str(uuid.uuid4()),
+            StatementId=f"{rule_name}-invoke",  # statementId 고정
             Action="lambda:InvokeFunction",
             Principal="events.amazonaws.com",
             SourceArn=source_arn
         )
     except lambda_client.exceptions.ResourceConflictException:
-        print(f"Permission already exists for {rule_name} — skipping duplicate permission.")
+        print(f"✅ Permission already exists for {rule_name} — skipping duplicate permission.")
+    except lambda_client.exceptions.PolicyLengthExceededException:
+        print(f"❌ Policy length exceeded — skipping permission add for {rule_name}")
 
     print(f"📌 Lambda scheduled: {rule_name} ({schedule_expression})")
