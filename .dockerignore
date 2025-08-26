@@ -1,4 +1,49 @@
-.git
+# Python build artifacts
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Secrets & environments
 .env
+.env.*
+*.pem
+*.key
+
+# Test files
+tests/
+*.pytest_cache/
+*.tox/
+coverage.*
+*.cover
+.cache/
+.pytest_cache/
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# Package / dependency directories
+node_modules/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Git
+.git/
+.gitignore
+
+# IDEs / tooling
+.vscode/
+.idea/
+*.code-workspace
+
+# Docker artifacts
+.dockerignore
+Dockerfile
