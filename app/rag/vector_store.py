@@ -2,29 +2,41 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 from pymongo import MongoClient
+<<<<<<< HEAD
+=======
+from sentence_transformers import SentenceTransformer
+>>>>>>> 43268caa83c5c05a1ddc8609436753390dda4b15
 from datetime import datetime
 import numpy as np
 from tqdm import tqdm
 import os
+<<<<<<< HEAD
 import boto3
 from dotenv import load_dotenv
 import posixpath
 
 os.environ["HF_HOME"] = "./huggingface_cache"
+=======
+from dotenv import load_dotenv
+>>>>>>> 43268caa83c5c05a1ddc8609436753390dda4b15
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "kickon"
 COLLECTION_NAME = "youtube_comments"
+<<<<<<< HEAD
 S3_BUCKET = os.getenv("S3_BUCKET")
 S3_PREFIX = os.getenv("S3_PREFIX")
 
 # FAISS 인덱스 저장 디렉토리
 FAISS_DIR = "kickon_vector_search/faiss_index"
+=======
+>>>>>>> 43268caa83c5c05a1ddc8609436753390dda4b15
 
 # 임베딩 모델 설정 (저장 시와 일치해야 함)
 embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
+<<<<<<< HEAD
 def save_faiss_index(embeddings, metadatas):
     """FAISS 인덱스를 생성하고 저장 + S3 업로드"""
     docs = [Document(page_content=meta["text"], metadata=meta) for meta in metadatas]
@@ -48,6 +60,17 @@ def upload_faiss_to_s3(local_dir, bucket, s3_prefix):
 
             s3.upload_file(local_path, bucket, s3_path)
             print(f"업로드 완료 → s3://{bucket}/{s3_path}")
+=======
+# 저장 디렉토리
+FAISS_DIR = "kickon_vector_search/faiss_index"
+
+def save_faiss_index(embeddings, metadatas):
+    """FAISS 인덱스를 생성하고 저장"""
+    docs = [Document(page_content=meta["text"], metadata=meta) for meta in metadatas]
+    vectorstore = FAISS.from_documents(docs, embedding_model)
+    os.makedirs(FAISS_DIR, exist_ok=True)
+    vectorstore.save_local(FAISS_DIR)
+>>>>>>> 43268caa83c5c05a1ddc8609436753390dda4b15
 
 def load_faiss_index():
     """FAISS 인덱스를 로드"""
@@ -60,6 +83,7 @@ def save_faiss_index_from_mongo(top_comments):
     대표 댓글(top_comments)을 받아 FAISS 인덱스를 생성하고 저장.
     """
 
+<<<<<<< HEAD
     embeddings = []
     metadata = []
 
@@ -67,6 +91,34 @@ def save_faiss_index_from_mongo(top_comments):
         text = comment.get("text_for_embedding")
         if text:
             emb = embedding_model.embed_query(text)
+=======
+    # client = MongoClient(MONGO_URI)
+    # collection = client[DB_NAME][COLLECTION_NAME]
+
+    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    #all_docs = list(collection.find({}, {"video_id": 1, "comments.text_for_embedding": 1}))
+
+    embeddings = []
+    metadata = []
+
+    # for doc in tqdm(all_docs):
+    #     video_id = doc["video_id"]
+    #     for comment in doc.get("comments", []):
+    #         text = comment.get("text_for_embedding")
+    #         if text:
+    #             emb = model.encode(text)
+    #             embeddings.append(emb)
+    #             metadata.append({
+    #                 "video_id": video_id,
+    #                 "text": text,
+    #                 "created_at": datetime.utcnow().isoformat()
+    #             })
+
+    for comment in tqdm(top_comments):
+        text = comment.get("text_for_embedding")
+        if text:
+            emb = model.encode(text)
+>>>>>>> 43268caa83c5c05a1ddc8609436753390dda4b15
             embeddings.append(emb)
             metadata.append({
                 "video_id": comment["video_id"],
