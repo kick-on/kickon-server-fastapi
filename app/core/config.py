@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     aws_account_id: str
     aws_region: str
     lambda_function_name: str
+    s3_bucket: str     
+    s3_prefix: str   
 
     class Config:
         env_file = ".env"

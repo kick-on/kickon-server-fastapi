@@ -18,6 +18,6 @@ def manual_run(bot_type: str, topic: str = None):
 
 if __name__ == "__main__":
     bot_type = "postgame"    # pregame / realtime / postgame / trend
-    topic = "첼시 리버풀 하이라이트"
+    topic = "화성 수원 하이라이트"
 
     manual_run(bot_type, topic)
