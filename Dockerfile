@@ -9,9 +9,12 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# HuggingFace 캐시 복사
-COPY huggingface_cache/ /var/task/huggingface_cache/
+ENV HF_HOME=/opt/huggingface_cache
 ENV TRANSFORMERS_CACHE=/var/task/huggingface_cache
+
+# 모델 캐시 미리 다운로드
+RUN mkdir -p $HF_HOME && \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # 코드 복사
 COPY app/ app/

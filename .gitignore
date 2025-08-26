@@ -55,3 +55,5 @@ dist/
 build/
 *.egg-info/
 *.egg
+
+huggingface_cache/
