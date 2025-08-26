@@ -4,14 +4,17 @@ FROM public.ecr.aws/lambda/python:3.9
 # 빌드 툴 설치
 RUN yum -y install gcc-c++ swig git make
 
-# Rust 설치 및 PATH 설정
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
 # 패키지 설치 (캐시 최적화)
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+ENV HF_HOME=/opt/huggingface_cache
+ENV TRANSFORMERS_CACHE=/var/task/huggingface_cache
+
+# 모델 캐시 미리 다운로드
+RUN mkdir -p $HF_HOME && \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # 코드 복사
 COPY app/ app/

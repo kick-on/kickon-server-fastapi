@@ -10,7 +10,6 @@ class Board(Base):
     __tablename__ = "Board"
 
     pk = Column(Integer, primary_key=True, index=True)
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4)
     status = Column(String, default="ACTIVATED")
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
